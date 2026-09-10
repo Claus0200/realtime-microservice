@@ -3,6 +3,10 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: bizcord-rabbitmq
 
+    environment:
+      RABBITMQ_DEFAULT_USER: bizcord
+      RABBITMQ_DEFAULT_PASS: bizcord
+
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -21,7 +25,8 @@ services:
       - "8080:8080"
 
     environment:
-      ConnectionStrings__RabbitMq: host=rabbitmq
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__RabbitMq: host=rabbitmq;username=bizcord;password=bizcord
 
     depends_on:
       rabbitmq:
