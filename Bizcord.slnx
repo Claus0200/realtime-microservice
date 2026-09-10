@@ -1,11 +1,21 @@
 <Solution>
-  <Folder Name="/apps/" />
-  <Folder Name="/apps/RealtimeCommunication-microservice/" />
+
+  <Folder Name="/Solution Items/">
+    <File Path="compose.yaml" />
+  </Folder>
+
+  <Folder Name="/apps/RealtimeCommunication-microservice/">
+    <File Path="apps\RealtimeCommunication-microservice\Dockerfile" />
+    <File Path="apps\RealtimeCommunication-microservice\README.md" />
+  </Folder>
+
   <Folder Name="/apps/RealtimeCommunication-microservice/src/">
-    <Project Path="apps/RealtimeCommunication-microservice/src/Messages/Messages.csproj" />
-    <Project Path="apps/RealtimeCommunication-microservice/src/RealtimeCommunication/RealtimeCommunication.csproj" />
+    <Project Path="apps\RealtimeCommunication-microservice\src\Messages\Messages.csproj" />
+    <Project Path="apps\RealtimeCommunication-microservice\src\RealtimeCommunication\RealtimeCommunication.csproj" />
   </Folder>
+
   <Folder Name="/apps/RealtimeCommunication-microservice/tests/">
-    <Project Path="apps/RealtimeCommunication-microservice/tests/RealtimeCommunication.Tests/RealtimeCommunication.Tests.csproj" />
+    <Project Path="apps\RealtimeCommunication-microservice\tests\RealtimeCommunication.Tests\RealtimeCommunication.Tests.csproj" />
   </Folder>
+
 </Solution>
