@@ -1,0 +1,28 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: bizcord-rabbitmq
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  realtime-communication:
+    build:
+      context: ./apps/RealtimeCommunication-microservice
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      ConnectionStrings__RabbitMq: host=rabbitmq
+
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
