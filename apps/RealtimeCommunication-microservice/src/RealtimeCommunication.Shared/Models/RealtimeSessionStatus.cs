@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace RealtimeCommunication.Shared.Models;
 
-namespace RealtimeCommunication.Shared.Models
+public enum RealtimeSessionStatus
 {
-    internal class RealtimeSessionStatus
-    {
-    }
+    Waiting,
+    Active,
+    Ended
 }

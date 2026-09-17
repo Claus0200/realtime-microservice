@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace RealtimeCommunication.Shared.Models;
 
-namespace RealtimeCommunication.Shared.Models
+public sealed record VoiceStateModel
 {
-    internal class VoiceStateModel
-    {
-    }
+    public bool SelfMuted { get; init; }
+    public bool SelfDeafened { get; init; }
+    public bool ServerMuted { get; init; }
+    public bool ServerDeafened { get; init; }
 }

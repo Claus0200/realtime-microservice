@@ -1,10 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace RealtimeCommunication.Shared.Requests
+namespace RealtimeCommunication.Shared.Requests;
+
+public sealed record CreateRealtimeSessionRequest : IValidatableObject
 {
-    internal class CreateRealtimeSessionRequest
+    public Guid ChannelId { get; init; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (ChannelId == Guid.Empty)
+        {
+            yield return new ValidationResult(
+                "ChannelId must be a non-empty GUID.",
+                new[] { nameof(ChannelId) });
+        }
     }
 }
