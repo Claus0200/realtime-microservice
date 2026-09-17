@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Messages\Messages.csproj" />
+    <ProjectReference Include="..\RealtimeCommunication.Shared\RealtimeCommunication.Shared.csproj" />
   </ItemGroup>
 
 </Project>
