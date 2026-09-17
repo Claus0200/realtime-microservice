@@ -1,6 +1,9 @@
 ﻿namespace RealtimeCommunication.Domain
 {
-    public class SessionStatus
+    public enum RealtimeSessionStatus
     {
+        Waiting,
+        Active,
+        Ended
     }
 }
