@@ -1,6 +1,8 @@
-﻿namespace RealtimeCommunication.Messaging
+﻿namespace RealtimeCommunication.Messaging;
+
+public interface IMessageHandler<in TMessage>
 {
-    public interface IMessageHandler
-    {
-    }
+    Task HandleAsync(
+        TMessage message,
+        CancellationToken cancellationToken);
 }
