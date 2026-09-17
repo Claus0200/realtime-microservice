@@ -1,0 +1,33 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: bizcord-rabbitmq
+
+    environment:
+      RABBITMQ_DEFAULT_USER: bizcord
+      RABBITMQ_DEFAULT_PASS: bizcord
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  realtime-communication:
+    build:
+      context: ./apps/RealtimeCommunication-microservice
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__RabbitMq: host=rabbitmq;username=bizcord;password=bizcord
+
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
