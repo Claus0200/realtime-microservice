@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/packages/">
+    <Project Path="packages/Shared.Contracts/Shared.Contracts.csproj" />
+  </Folder>
 
   <Folder Name="/Solution Items/">
     <File Path="compose.yaml" />

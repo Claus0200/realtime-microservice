@@ -480,3 +480,9 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Shared source contracts are part of the repository
+!/packages/Shared.Contracts/
+!/packages/Shared.Contracts/**
+
+packages/Shared.Contracts/obj/
