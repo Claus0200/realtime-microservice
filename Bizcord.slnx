@@ -3,6 +3,7 @@
   <Folder Name="/Solution Items/">
     <File Path="compose.yaml" />
   </Folder>
+  <Folder Name="/apps/" />
 
   <Folder Name="/apps/RealtimeCommunication-microservice/">
     <File Path="apps\RealtimeCommunication-microservice\Dockerfile" />
@@ -10,6 +11,7 @@
   </Folder>
 
   <Folder Name="/apps/RealtimeCommunication-microservice/src/">
+    <Project Path="apps/RealtimeCommunication-microservice/src/RealtimeCommunication.Shared/RealtimeCommunication.Shared.csproj" />
     <Project Path="apps\RealtimeCommunication-microservice\src\Messages\Messages.csproj" />
     <Project Path="apps\RealtimeCommunication-microservice\src\RealtimeCommunication\RealtimeCommunication.csproj" />
   </Folder>
