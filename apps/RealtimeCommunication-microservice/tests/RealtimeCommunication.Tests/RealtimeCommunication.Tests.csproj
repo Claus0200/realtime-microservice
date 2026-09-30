@@ -20,8 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RealtimeCommunication\RealtimeCommunication.csproj" />
     <ProjectReference Include="..\..\..\..\packages\Shared.Contracts\Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Messages\Messages.csproj" />
+    <ProjectReference Include="..\..\src\RealtimeCommunication.Shared\RealtimeCommunication.Shared.csproj" />
+    <ProjectReference Include="..\..\src\RealtimeCommunication\RealtimeCommunication.csproj" />
   </ItemGroup>
 
 </Project>
