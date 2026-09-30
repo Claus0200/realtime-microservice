@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RealtimeCommunication\RealtimeCommunication.csproj" />
+    <ProjectReference Include="..\..\..\..\packages\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
