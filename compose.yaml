@@ -19,7 +19,8 @@ services:
 
   realtime-communication:
     build:
-      context: ./apps/RealtimeCommunication-microservice
+      context: .
+      dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
 
     ports:
       - "8080:8080"
