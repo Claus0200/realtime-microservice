@@ -1,15 +1,32 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY src/RealtimeCommunication/RealtimeCommunication.csproj src/RealtimeCommunication/
-COPY src/Messages/Messages.csproj src/Messages/
+COPY packages/Shared.Contracts/Shared.Contracts.csproj \
+     packages/Shared.Contracts/
 
-RUN dotnet restore src/RealtimeCommunication/RealtimeCommunication.csproj
+COPY apps/RealtimeCommunication-microservice/src/Messages/Messages.csproj \
+     apps/RealtimeCommunication-microservice/src/Messages/
 
-COPY src/ src/
+COPY apps/RealtimeCommunication-microservice/src/RealtimeCommunication.Shared/RealtimeCommunication.Shared.csproj \
+     apps/RealtimeCommunication-microservice/src/RealtimeCommunication.Shared/
 
-RUN dotnet publish src/RealtimeCommunication/RealtimeCommunication.csproj -c Release -o /app/publish /p:UseAppHost=false
+COPY apps/RealtimeCommunication-microservice/src/RealtimeCommunication/RealtimeCommunication.csproj \
+     apps/RealtimeCommunication-microservice/src/RealtimeCommunication/
 
+RUN dotnet restore \
+    apps/RealtimeCommunication-microservice/src/RealtimeCommunication/RealtimeCommunication.csproj
+
+COPY packages/Shared.Contracts/ \
+     packages/Shared.Contracts/
+
+COPY apps/RealtimeCommunication-microservice/src/ \
+     apps/RealtimeCommunication-microservice/src/
+
+RUN dotnet publish \
+    apps/RealtimeCommunication-microservice/src/RealtimeCommunication/RealtimeCommunication.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
