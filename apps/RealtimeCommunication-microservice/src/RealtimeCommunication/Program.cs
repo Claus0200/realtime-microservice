@@ -1,5 +1,5 @@
-using RealtimeCommunication;
 using RealtimeCommunication.Messaging;
+using RealtimeCommunication.Messaging.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +10,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Messaging
-builder.Services.AddMessageClient(builder.Configuration);
-builder.Services.AddHostedService<MessageSubscriber>();
+builder.Services.AddMessageClient(
+    builder.Configuration);
+
+builder.Services.AddMessageHandlers(
+    typeof(MessagePostedHandler).Assembly);
 
 var app = builder.Build();
 
