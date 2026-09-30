@@ -1,4 +1,5 @@
 using RealtimeCommunication.Messaging;
+using RealtimeCommunication.Messaging.Handlers;
 using Shared.Contracts.Events;
 using Xunit;
 
@@ -13,7 +14,8 @@ public class MessagePostedHandlerTests
         var messageId = Guid.NewGuid();
 
         var client = new EasyNetQMessageClient();
-        var handler = new MessagePostedHandler(client);
+        var logger = new LoggerFactory().CreateLogger<MessagePostedHandler>();
+        var handler = new MessagePostedHandler(client, logger);
 
         var message = new MessagePostedEvent
         {
@@ -28,7 +30,7 @@ public class MessagePostedHandlerTests
         await handler.Handle(message, CancellationToken.None);
 
         // Assert
-        var published = client.SinglePublished<YourResultEvent>();
+        var published = client.SinglePublished<VoiceCommandCheckedEvent>();
 
         published.Should().NotBeNull();
         published.MessageId.Should().Be(messageId);
@@ -39,7 +41,8 @@ public class MessagePostedHandlerTests
     {
         // Arrange
         var client = new EasyNetQMessageClient();
-        var handler = new MessagePostedHandler(client);
+        var logger = new LoggerFactory().CreateLogger<MessagePostedHandler>();
+        var handler = new MessagePostedHandler(client, logger);
 
         var message = new MessagePostedEvent
         {
@@ -66,7 +69,7 @@ public class MessagePostedHandlerTests
     {
         // Arrange
         var messageId = Guid.NewGuid();
-        var capture = new MessageCapture<YourResultEvent>(_factory.MessageClient);
+        var capture = new MessageCapture<VoiceCommandCheckedEvent>(_factory.MessageClient);
 
         // Act
         await _factory.MessageClient.PublishAsync(new MessagePostedEvent
