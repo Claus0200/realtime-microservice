@@ -1,0 +1,70 @@
+
+{
+  "Routes": [
+    {
+      "Key": "realtime-sessions-get-all",
+      "UpstreamPathTemplate": "/api/realtime-sessions",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/realtime-sessions",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "Key": "realtime-sessions-get-by-id",
+      "UpstreamPathTemplate": "/api/realtime-sessions/{id}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/realtime-sessions/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "Key": "realtime-sessions-create",
+      "UpstreamPathTemplate": "/api/realtime-sessions",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/realtime-sessions",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "Key": "realtime-sessions-update",
+      "UpstreamPathTemplate": "/api/realtime-sessions/{id}",
+      "UpstreamHttpMethod": ["PUT"],
+      "DownstreamPathTemplate": "/api/realtime-sessions/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "Key": "realtime-sessions-delete",
+      "UpstreamPathTemplate": "/api/realtime-sessions/{id}",
+      "UpstreamHttpMethod": ["DELETE"],
+      "DownstreamPathTemplate": "/api/realtime-sessions/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ]
+    }
+  ]
+}

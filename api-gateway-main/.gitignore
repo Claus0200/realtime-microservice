@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+.vscode/
+.DS_Store
+.env
+*.user
+# Ocelot generates this from Configuration/ocelot.*.json at startup.
+src/Configuration/ocelot.json
+**/__pycache__/
