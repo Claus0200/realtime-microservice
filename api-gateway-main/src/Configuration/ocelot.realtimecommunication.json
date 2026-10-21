@@ -12,7 +12,15 @@
           "Host": "realtime-communication",
           "Port": 8080
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": ["channel.read"]
+      },
+      "AddHeadersToRequest": {
+        "X-UserId": "Claims[sub] > value",
+        "X-Role": "Claims[role] > value"
+      }
     },
     {
       "Key": "realtime-sessions-get-by-id",
@@ -25,7 +33,15 @@
           "Host": "realtime-communication",
           "Port": 8080
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": ["channel.read"]
+      },
+      "AddHeadersToRequest": {
+        "X-UserId": "Claims[sub] > value",
+        "X-Role": "Claims[role] > value"
+      }
     },
     {
       "Key": "realtime-sessions-create",
@@ -38,7 +54,18 @@
           "Host": "realtime-communication",
           "Port": 8080
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-UserId": "Claims[sub] > value",
+        "X-Role": "Claims[role] > value"
+      }
     },
     {
       "Key": "realtime-sessions-update",
@@ -51,7 +78,18 @@
           "Host": "realtime-communication",
           "Port": 8080
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-UserId": "Claims[sub] > value",
+        "X-Role": "Claims[role] > value"
+      }
     },
     {
       "Key": "realtime-sessions-delete",
@@ -64,7 +102,18 @@
           "Host": "realtime-communication",
           "Port": 8080
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "admin"
+      },
+      "AddHeadersToRequest": {
+        "X-UserId": "Claims[sub] > value",
+        "X-Role": "Claims[role] > value"
+      }
     }
   ]
 }
