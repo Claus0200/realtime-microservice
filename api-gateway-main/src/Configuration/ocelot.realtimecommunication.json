@@ -114,6 +114,27 @@
         "X-UserId": "Claims[sub] > value",
         "X-Role": "Claims[role] > value"
       }
+    },
+    {
+      "Key": "realtime-messages-ping",
+      "UpstreamPathTemplate": "/api/messages/ping",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/messages/ping",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": ["channel.read"]
+      },
+      "AddHeadersToRequest": {
+        "X-UserId": "Claims[sub] > value",
+        "X-Role": "Claims[role] > value"
+      }
     }
   ]
 }
