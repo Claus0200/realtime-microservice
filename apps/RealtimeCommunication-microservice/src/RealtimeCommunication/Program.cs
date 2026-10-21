@@ -1,5 +1,6 @@
 using RealtimeCommunication.Messaging;
 using RealtimeCommunication.Messaging.Handlers;
+using RealtimeCommunication.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Services.AddMessageClient(
 
 builder.Services.AddMessageHandlers(
     typeof(MessagePostedHandler).Assembly);
+
+builder.Services.AddScoped<IRealtimeSessionService, RealtimeSessionService>();
 
 var app = builder.Build();
 
