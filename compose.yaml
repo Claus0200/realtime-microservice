@@ -23,7 +23,7 @@ services:
       dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
 
     ports:
-      - "8080:8080"
+      - "9080:8080"
 
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -38,7 +38,7 @@ services:
       context: ./api-gateway-main
       dockerfile: Dockerfile
     ports:
-      - "8081:8080"
+      - "9081:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
