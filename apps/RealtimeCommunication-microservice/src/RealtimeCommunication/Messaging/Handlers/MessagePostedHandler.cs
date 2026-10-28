@@ -20,6 +20,15 @@ public sealed class MessagePostedHandler
         MessagePostedEvent message,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(message.Content))
+        {
+            _logger.LogWarning(
+                "Ignoring invalid message {MessageId}: content is null or empty",
+                message.MessageId);
+
+            return;
+        }
+
         var content = message.Content
             .Trim()
             .ToLowerInvariant();

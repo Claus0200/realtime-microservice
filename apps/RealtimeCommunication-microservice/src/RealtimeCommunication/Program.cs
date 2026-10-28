@@ -1,6 +1,8 @@
 using RealtimeCommunication.Messaging;
 using RealtimeCommunication.Messaging.Handlers;
 using RealtimeCommunication.Services;
+using EasyNetQ;
+using EasyNetQ.Persistent;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,5 +38,15 @@ app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.MapGet("/health", () => Results.Ok("Healthy"));
+
+app.MapGet("/health/ready", (IBus bus) =>
+{
+    var status = bus.Advanced.GetConnectionStatus(
+        PersistentConnectionType.Consumer);
+
+    return status.State == PersistentConnectionState.Connected
+        ? Results.Ok("RabbitMQ connected")
+        : Results.StatusCode(503);
+});
 
 app.Run();

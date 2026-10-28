@@ -35,7 +35,8 @@ public static class ServiceExtensions
                 };
             });
         services.AddAuthorization();
-        services.AddOcelot(configuration);
+        services.AddOcelot(configuration)
+            .AddQualityOfService();
         return services;
     }
 
