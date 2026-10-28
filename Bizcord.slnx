@@ -6,6 +6,10 @@
   <Folder Name="/Solution Items/">
     <File Path="compose.yaml" />
   </Folder>
+  <Folder Name="/api-gateway-main/" />
+  <Folder Name="/api-gateway-main/src/">
+    <Project Path="api-gateway-main/src/api-gateway.csproj" />
+  </Folder>
   <Folder Name="/apps/" />
 
   <Folder Name="/apps/RealtimeCommunication-microservice/">
