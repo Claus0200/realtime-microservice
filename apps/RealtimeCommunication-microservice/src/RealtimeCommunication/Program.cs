@@ -31,4 +31,6 @@ app.MapControllers();
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
+app.MapGet("/health", () => Results.Ok("Healthy"));
+
 app.Run();

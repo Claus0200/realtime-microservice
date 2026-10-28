@@ -119,6 +119,8 @@ app.MapGet("/openapi/realtime.json",
         }
     });
 
+app.MapGet("/health", () => Results.Ok("Healthy"));
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

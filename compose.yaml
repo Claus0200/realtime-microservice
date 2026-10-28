@@ -1,46 +1,97 @@
+
 services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: bizcord-rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
 
     environment:
       RABBITMQ_DEFAULT_USER: bizcord
       RABBITMQ_DEFAULT_PASS: bizcord
+      RABBITMQ_NODENAME: rabbit@rabbitmq
 
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    networks:
+      - backend
 
     healthcheck:
-      test: rabbitmq-diagnostics check_port_connectivity
-      interval: 5s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+      start_period: 20s
 
   realtime-communication:
+    image: bizcord-realtime:${REALTIME_VERSION:-1.0.0}
+
     build:
       context: .
       dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
 
-    ports:
-      - "9080:8080"
+    restart: unless-stopped
 
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__RabbitMq: host=rabbitmq;username=bizcord;password=bizcord
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__RabbitMq: "host=rabbitmq;username=bizcord;password=bizcord"
+
+    ports:
+      - "127.0.0.1:9080:8080"
+
+    networks:
+      - backend
 
     depends_on:
       rabbitmq:
         condition: service_healthy
 
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
   api-gateway:
+    image: bizcord-gateway:${GATEWAY_VERSION:-1.0.0}
+
     build:
       context: ./api-gateway-main
       dockerfile: Dockerfile
-    ports:
-      - "9081:8080"
+
+    restart: unless-stopped
+
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
+
+    ports:
+      - "127.0.0.1:9081:8080"
+
+    networks:
+      - backend
+
     depends_on:
-      - realtime-communication
+      realtime-communication:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
