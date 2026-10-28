@@ -14,8 +14,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMessageClient(
     builder.Configuration);
 
+// Monitor RabbitMQ connectivity.
+builder.Services.AddHostedService<RabbitMqConnectionMonitor>();
+
 builder.Services.AddMessageHandlers(
     typeof(MessagePostedHandler).Assembly);
+
 
 builder.Services.AddScoped<IRealtimeSessionService, RealtimeSessionService>();
 
