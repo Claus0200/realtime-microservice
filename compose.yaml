@@ -142,15 +142,23 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
+
     container_name: bizcord-keycloak
+
     command: start-dev
+    
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
     volumes:
       - ./keycloak/data:/opt/keycloak/data
+
     ports:
     - "9082:8080"
+
+    networks:
+      - backend
 
 networks:
   backend:

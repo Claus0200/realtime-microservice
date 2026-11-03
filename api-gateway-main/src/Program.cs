@@ -4,6 +4,7 @@ using Bizcord.ApiGateway.Extensions;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,12 +23,29 @@ builder.Services
     {
         options.Authority =
             builder.Configuration["Keycloak:Authority"];
+        
+        options.MetadataAddress =
+            "http://keycloak:8080/realms/bizcord/.well-known/openid-configuration";
 
         options.Audience = "realtime-communication";
 
         options.RequireHttpsMetadata = false;
 
         options.MapInboundClaims = false;
+
+        options.RefreshOnIssuerKeyNotFound = true;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "http://localhost:9082/realms/bizcord",
+
+            ValidateAudience = true,
+            ValidAudience = "realtime-communication",
+
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
     });
 
 // Used to retrieve Swagger documents from downstream services.
