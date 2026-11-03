@@ -1,14 +1,47 @@
-
 version: "3.8"
 
 services:
+  vault:
+    image: hashicorp/vault:1.21.0
+    command: server
+
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+
+    ports:
+      - target: 8200
+        published: 8200
+        protocol: tcp
+        mode: host
+
+    configs:
+      - source: vault_config
+        target: /vault/config/config.hcl
+
+    volumes:
+      - vault_data:/vault/file
+
+    networks:
+      - backend
+
+    deploy:
+      replicas: 1
+
+      placement:
+        constraints:
+          - node.role == manager
+
+      restart_policy:
+        condition: any
+        delay: 5s
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     hostname: rabbitmq
 
     environment:
       RABBITMQ_DEFAULT_USER: bizcord
-      RABBITMQ_DEFAULT_PASS: bizcord
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_NODENAME: rabbit@rabbitmq
 
     ports:
@@ -48,14 +81,12 @@ services:
   realtime-communication:
     image: bizcord-realtime:${REALTIME_VERSION:-1.0.0}
 
-    build:
-      context: .
-      dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
-
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__RabbitMq: "host=rabbitmq;username=bizcord;password=bizcord"
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROLE_ID: ${VAULT_ROLE_ID}
+      VAULT_SECRET_ID: ${VAULT_SECRET_ID}
 
     networks:
       - backend
@@ -138,5 +169,10 @@ networks:
   backend:
     driver: overlay
 
+configs:
+  vault_config:
+    file: ./vault/config.hcl
+
 volumes:
   rabbitmq_data:
+  vault_data:
