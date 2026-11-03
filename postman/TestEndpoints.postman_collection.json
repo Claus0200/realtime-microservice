@@ -1,0 +1,242 @@
+{
+  "info": {
+    "_postman_id": "cfc78ae0-cee7-44be-ac2e-c39cc0d639ca",
+    "name": "TestEndpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53271096"
+  },
+  "item": [
+    {
+      "name": "Authorization",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const response = pm.response.json();\n\npm.environment.set(\"access-token-member\", response.value);\n\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"claims\": {\r\n    \"sub\": \"test-user-123\",\r\n    \"scope\": \"channel.read\",\r\n    \"role\": \"member\"\r\n  }\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:9081/faucet",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9081",
+          "path": [
+            "faucet"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ping",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access-token-user}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:9081/api/messages/ping",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9081",
+          "path": [
+            "api",
+            "messages",
+            "ping"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Authorization (OAuth)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const response = pm.response.json();\r\n\r\nif (response.access_token) {\r\n    pm.environment.set(\"access-token-oauth\", response.access_token);\r\n    console.log(\"Keycloak access token saved.\");\r\n} else {\r\n    console.error(\"No access token returned.\");\r\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "key": "client_id",
+              "value": "notification-service"
+            },
+            {
+              "key": "client_secret",
+              "value": "2qpaaiHMMZ6JBqsqSS82D2kHJSQFM1NY"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{token-url}}",
+          "host": [
+            "{{token-url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Internal Ping (OAuth)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0r9z}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:9081/api/messages/ping",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9081",
+          "path": [
+            "api",
+            "messages",
+            "ping"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Realtime-session/get-by-id",
+      "request": {
+        "auth": {
+          "type": "oauth2",
+          "oauth2": [
+            {
+              "key": "clientId",
+              "value": "{{client-id}}",
+              "type": "string"
+            },
+            {
+              "key": "accessTokenUrl",
+              "value": "{{token-url}}",
+              "type": "string"
+            },
+            {
+              "key": "tokenName",
+              "value": "Bizcord-Keycloak",
+              "type": "string"
+            },
+            {
+              "key": "addTokenTo",
+              "value": "header",
+              "type": "string"
+            },
+            {
+              "key": "clientSecret",
+              "value": "{{client-secret}}",
+              "type": "string"
+            },
+            {
+              "key": "client_authentication",
+              "value": "header",
+              "type": "string"
+            },
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "string"
+            },
+            {
+              "key": "refreshTokenUrl",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "key": "scope",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:9081/api/realtime-sessions/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9081",
+          "path": [
+            "api",
+            "realtime-sessions",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_0mtp",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0r9z",
+      "secret": true
+    }
+  ]
+}
