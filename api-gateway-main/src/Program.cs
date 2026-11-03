@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Bizcord.ApiGateway.Extensions;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApiGatewayServices(builder.Configuration);
+
+// Keycloak authentication
+builder.Services
+    .AddAuthentication()
+    .AddJwtBearer("ServiceBearer", options =>
+    {
+        options.Authority =
+            builder.Configuration["Keycloak:Authority"];
+
+        options.Audience = "realtime-communication";
+
+        options.RequireHttpsMetadata = false;
+
+        options.MapInboundClaims = false;
+    });
 
 // Used to retrieve Swagger documents from downstream services.
 builder.Services.AddHttpClient();

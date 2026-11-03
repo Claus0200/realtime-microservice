@@ -135,6 +135,25 @@
         "X-UserId": "Claims[sub] > value",
         "X-Role": "Claims[role] > value"
       }
+    },
+    {
+      "Key": "realtime-messages-ping-internal",
+      "UpstreamPathTemplate": "/internal/messages/ping",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/messages/ping",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["ServiceBearer"]
+      },
+      "RouteClaimsRequirement": {
+        "role": "internal-service"
+      }
     }
   ]
 }

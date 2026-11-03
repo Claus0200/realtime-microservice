@@ -28,6 +28,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__RabbitMq: host=rabbitmq;username=bizcord;password=bizcord
+      Keycloak__Authority: http://keycloak:8080/realms/bizcord
 
     depends_on:
       rabbitmq:
@@ -42,5 +43,19 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
+      Keycloak__Authority: http://keycloak:8080/realms/bizcord
     depends_on:
       - realtime-communication
+      - keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: bizcord-keycloak
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak/data:/opt/keycloak/data
+    ports:
+    - "9082:8080"
