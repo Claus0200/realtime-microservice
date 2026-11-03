@@ -1,5 +1,30 @@
 
 services:
+  vault:
+    image: hashicorp/vault:1.21.0
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8200:8200"
+
+    volumes:
+      - ./vault/config.hcl:/vault/config/config.hcl:ro
+      - vault_data:/vault/file
+
+    command: server
+
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: bizcord-rabbitmq
@@ -8,7 +33,7 @@ services:
 
     environment:
       RABBITMQ_DEFAULT_USER: bizcord
-      RABBITMQ_DEFAULT_PASS: bizcord
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_NODENAME: rabbit@rabbitmq
 
     ports:
@@ -40,7 +65,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__RabbitMq: "host=rabbitmq;username=bizcord;password=bizcord"
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_TOKEN:-}
 
     ports:
       - "127.0.0.1:9080:8080"
@@ -50,6 +76,8 @@ services:
 
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      vault:
         condition: service_healthy
 
     healthcheck:
@@ -95,3 +123,4 @@ networks:
 
 volumes:
   rabbitmq_data:
+  vault_data:
