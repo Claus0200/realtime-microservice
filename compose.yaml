@@ -86,8 +86,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
       VAULT_ADDR: http://vault:8200
-      VAULT_TOKEN: ${VAULT_TOKEN:-}
-      Keycloak_Authority: http://keycloak:8080/realms/bizcord
+      VAULT_ROLE_ID: ${VAULT_ROLE_ID:?required}
+      VAULT_SECRET_ID: ${VAULT_SECRET_ID:?required}
+      Keycloak__Authority: http://keycloak:8080/realms/bizcord
 
     ports:
       - "127.0.0.1:9080:8080"
