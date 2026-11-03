@@ -24,6 +24,26 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    
+    depends_on:
+      vault-seed:
+        condition: service_completed_successfully
+  
+  vault-seed:
+    image: alpine:3.20
+    restart: "no"
+
+    volumes:
+      - ./vault/seed:/seed:ro
+      - vault_data:/vault/file
+
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        test -n "$$(ls -A /seed)"
+        if [ -z "$$(ls -A /vault/file)" ]; then
+          cp -a /seed/. /vault/file/
+        fi
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
