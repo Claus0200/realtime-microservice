@@ -1,42 +1,10 @@
-
 services:
-  vault:
-    image: hashicorp/vault:1.21.0
-    restart: unless-stopped
-
-    ports:
-      - "127.0.0.1:8200:8200"
-
-    volumes:
-      - ./vault/config.hcl:/vault/config/config.hcl:ro
-      - vault_data:/vault/file
-
-    command: server
-
-    environment:
-      VAULT_ADDR: http://127.0.0.1:8200
-
-    networks:
-      - backend
-
-    healthcheck:
-      test: ["CMD", "vault", "status"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    
-    depends_on:
-      vault-seed:
-        condition: service_completed_successfully
-  
   vault-seed:
     image: alpine:3.20
     restart: "no"
-
     volumes:
       - ./vault/seed:/seed:ro
       - vault_data:/vault/file
-
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
@@ -45,27 +13,97 @@ services:
           cp -a /seed/. /vault/file/
         fi
 
+  vault:
+    image: hashicorp/vault:1.21.0
+    restart: unless-stopped
+    command: server
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    ports:
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - ./vault/config.hcl:/vault/config/config.hcl:ro
+      - vault_data:/vault/file
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      vault-seed:
+        condition: service_completed_successfully
+
+  vault-config-init:
+    image: hashicorp/vault:1.21.0
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        # Authenticate RabbitMQ using its own AppRole.
+        rabbit_token="$$(vault write -field=token auth/approle/login role_id="$$RABBITMQ_ROLE_ID" secret_id="$$RABBITMQ_SECRET_ID")"
+
+        rabbit_password="$$(VAULT_TOKEN="$$rabbit_token" vault kv get -mount=secret -field=RabbitMqPassword bizcord)"
+        test -n "$$rabbit_password"
+
+        # Authenticate Keycloak using its own AppRole.
+        keycloak_token="$$(vault write -field=token auth/approle/login role_id="$$KEYCLOAK_ROLE_ID" secret_id="$$KEYCLOAK_SECRET_ID")"
+
+        keycloak_password="$$(VAULT_TOKEN="$$keycloak_token" vault kv get -mount=secret -field=BootstrapAdminPassword keycloak)"
+        test -n "$$keycloak_password"
+
+        # Generate configuration files.
+        umask 077
+
+        printf 'default_user = bizcord\ndefault_pass = %s\n' "$$rabbit_password" > /generated-rabbitmq/rabbitmq.conf
+
+        printf 'bootstrap-admin-username=admin\nbootstrap-admin-password=%s\n' "$$keycloak_password" > /generated-keycloak/keycloak.conf
+
+        chmod 0444 /generated-rabbitmq/rabbitmq.conf
+        chmod 0444 /generated-keycloak/keycloak.conf
+
+        echo "RabbitMQ and Keycloak configuration generated successfully."
+
+    environment:
+      VAULT_ADDR: http://vault:8200
+      RABBITMQ_ROLE_ID: ${RABBITMQ_VAULT_ROLE_ID:?required}
+      RABBITMQ_SECRET_ID: ${RABBITMQ_VAULT_SECRET_ID:?required}
+      KEYCLOAK_ROLE_ID: ${KEYCLOAK_VAULT_ROLE_ID:?required}
+      KEYCLOAK_SECRET_ID: ${KEYCLOAK_VAULT_SECRET_ID:?required}
+
+    volumes:
+      - rabbitmq_config:/generated-rabbitmq
+      - keycloak_config:/generated-keycloak
+
+    networks:
+      - backend
+
+    depends_on:
+      vault:
+        condition: service_healthy
+
+    restart: "no"
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: bizcord-rabbitmq
     hostname: rabbitmq
     restart: unless-stopped
-
     environment:
-      RABBITMQ_DEFAULT_USER: bizcord
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_NODENAME: rabbit@rabbitmq
-
+      RABBITMQ_CONFIG_FILE: /run/vault-rabbitmq/rabbitmq.conf
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
-
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-
+      - rabbitmq_config:/run/vault-rabbitmq:ro
     networks:
       - backend
-
+    depends_on:
+      vault-config-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -75,13 +113,10 @@ services:
 
   realtime-communication:
     image: bizcord-realtime:${REALTIME_VERSION:-1.0.0}
-
     build:
       context: .
       dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
-
     restart: unless-stopped
-
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
@@ -89,50 +124,15 @@ services:
       VAULT_ROLE_ID: ${VAULT_ROLE_ID:?required}
       VAULT_SECRET_ID: ${VAULT_SECRET_ID:?required}
       Keycloak__Authority: http://keycloak:8080/realms/bizcord
-
     ports:
       - "127.0.0.1:9080:8080"
-
     networks:
       - backend
-
     depends_on:
       rabbitmq:
         condition: service_healthy
       vault:
         condition: service_healthy
-
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-      start_period: 30s
-
-  api-gateway:
-    image: bizcord-gateway:${GATEWAY_VERSION:-1.0.0}
-
-    build:
-      context: ./api-gateway-main
-      dockerfile: Dockerfile
-
-    restart: unless-stopped
-
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_HTTP_PORTS: "8080"
-      Keycloak_Authority: http://keycloak:8080/realms/bizcord
-
-    ports:
-      - "127.0.0.1:9081:8080"
-
-    networks:
-      - backend
-
-    depends_on:
-      realtime-communication:
-        condition: service_healthy
-
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
       interval: 10s
@@ -142,23 +142,49 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
-
     container_name: bizcord-keycloak
-
-    command: start-dev
-    
-    environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-
+    command:
+      - --config-file=/opt/keycloak/vault-config/keycloak.conf
+      - start-dev
     volumes:
       - ./keycloak/data:/opt/keycloak/data
-
+      - keycloak_config:/opt/keycloak/vault-config:ro
     ports:
-    - "9082:8080"
-
+      - "127.0.0.1:9082:8080"
     networks:
       - backend
+    depends_on:
+      vault-config-init:
+        condition: service_completed_successfully
+
+  api-gateway:
+    image: bizcord-gateway:${GATEWAY_VERSION:-1.0.0}
+    build:
+      context: ./api-gateway-main
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROLE_ID: ${GATEWAY_VAULT_ROLE_ID:?required}
+      VAULT_SECRET_ID: ${GATEWAY_VAULT_SECRET_ID:?required}
+      Keycloak__Authority: http://keycloak:8080/realms/bizcord
+    ports:
+      - "127.0.0.1:9081:8080"
+    networks:
+      - backend
+    depends_on:
+      realtime-communication:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
 
 networks:
   backend:
@@ -167,5 +193,5 @@ networks:
 volumes:
   rabbitmq_data:
   vault_data:
-
- 
+  rabbitmq_config:
+  keycloak_config:

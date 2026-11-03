@@ -4,46 +4,83 @@ services:
   vault:
     image: hashicorp/vault:1.21.0
     command: server
-
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
-
     ports:
       - target: 8200
         published: 8200
         protocol: tcp
         mode: host
-
     configs:
       - source: vault_config
         target: /vault/config/config.hcl
-
     volumes:
       - vault_data:/vault/file
-
     networks:
       - backend
-
     deploy:
       replicas: 1
-
       placement:
         constraints:
           - node.role == manager
-
       restart_policy:
         condition: any
+        delay: 5s
+
+  vault-config-init:
+    image: hashicorp/vault:1.21.0
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        until vault status >/dev/null 2>&1; do sleep 5; done
+        export VAULT_TOKEN="$$(vault login -method=approle -token-only role_id="$$RABBITMQ_ROLE_ID" secret_id="$$RABBITMQ_SECRET_ID")"
+        rabbitmq_password="$$(vault kv get -field=RabbitMqPassword secret/bizcord)"
+        test -n "$$rabbitmq_password"
+        umask 077
+        printf 'default_user = bizcord\ndefault_pass = %s\n' "$$rabbitmq_password" > /rabbitmq-config/rabbitmq.conf.tmp
+        chmod 0444 /rabbitmq-config/rabbitmq.conf.tmp
+        mv -f /rabbitmq-config/rabbitmq.conf.tmp /rabbitmq-config/rabbitmq.conf
+        unset rabbitmq_password VAULT_TOKEN
+
+        export VAULT_TOKEN="$$(vault login -method=approle -token-only role_id="$$KEYCLOAK_ROLE_ID" secret_id="$$KEYCLOAK_SECRET_ID")"
+        keycloak_password="$$(vault kv get -field=BootstrapAdminPassword secret/keycloak)"
+        test -n "$$keycloak_password"
+        printf 'bootstrap-admin-username=admin\nbootstrap-admin-password=%s\n' "$$keycloak_password" > /keycloak-config/keycloak.conf.tmp
+        chmod 0444 /keycloak-config/keycloak.conf.tmp
+        mv -f /keycloak-config/keycloak.conf.tmp /keycloak-config/keycloak.conf
+        unset keycloak_password VAULT_TOKEN
+    environment:
+      VAULT_ADDR: http://vault:8200
+      RABBITMQ_ROLE_ID: ${RABBITMQ_VAULT_ROLE_ID}
+      RABBITMQ_SECRET_ID: ${RABBITMQ_VAULT_SECRET_ID}
+      KEYCLOAK_ROLE_ID: ${KEYCLOAK_VAULT_ROLE_ID}
+      KEYCLOAK_SECRET_ID: ${KEYCLOAK_VAULT_SECRET_ID}
+    volumes:
+      - rabbitmq_config:/rabbitmq-config
+      - keycloak_config:/keycloak-config
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
         delay: 5s
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
     hostname: rabbitmq
-
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        test -s /run/vault-rabbitmq/rabbitmq.conf
+        exec /usr/local/bin/docker-entrypoint.sh rabbitmq-server
     environment:
-      RABBITMQ_DEFAULT_USER: bizcord
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_NODENAME: rabbit@rabbitmq
-
+      RABBITMQ_CONFIG_FILE: /run/vault-rabbitmq/rabbitmq.conf
     ports:
       - target: 5672
         published: 5672
@@ -53,55 +90,46 @@ services:
         published: 15672
         protocol: tcp
         mode: ingress
-
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-
+      - rabbitmq_config:/run/vault-rabbitmq:ro
     networks:
       - backend
-
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
-
     deploy:
       replicas: 1
-
       placement:
         constraints:
           - node.role == manager
-
       restart_policy:
         condition: any
         delay: 5s
 
   realtime-communication:
     image: bizcord-realtime:${REALTIME_VERSION:-1.0.0}
-
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
       VAULT_ADDR: http://vault:8200
       VAULT_ROLE_ID: ${VAULT_ROLE_ID}
       VAULT_SECRET_ID: ${VAULT_SECRET_ID}
-
+      Keycloak__Authority: http://keycloak:8080/realms/bizcord
     networks:
       - backend
-
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
       interval: 10s
       timeout: 3s
       retries: 3
       start_period: 30s
-
     deploy:
       replicas: 2
       endpoint_mode: vip
-
       update_config:
         parallelism: 1
         delay: 5s
@@ -109,46 +137,62 @@ services:
         failure_action: rollback
         monitor: 60s
         max_failure_ratio: 0
-
       rollback_config:
         parallelism: 1
         order: start-first
+      restart_policy:
+        condition: any
+        delay: 5s
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command:
+      - --config-file=/opt/keycloak/vault-config/keycloak.conf
+      - start-dev
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - keycloak_config:/opt/keycloak/vault-config:ro
+    ports:
+      - target: 8080
+        published: 9082
+        protocol: tcp
+        mode: ingress
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
       restart_policy:
         condition: any
         delay: 5s
 
   api-gateway:
     image: bizcord-gateway:${GATEWAY_VERSION:-1.0.0}
-
-    build:
-      context: ./api-gateway-main
-      dockerfile: Dockerfile
-
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
-
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROLE_ID: ${GATEWAY_VAULT_ROLE_ID}
+      VAULT_SECRET_ID: ${GATEWAY_VAULT_SECRET_ID}
+      Keycloak__Authority: http://keycloak:8080/realms/bizcord
     ports:
       - target: 8080
         published: 9081
         protocol: tcp
         mode: ingress
-
     networks:
       - backend
-
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
       interval: 10s
       timeout: 3s
       retries: 3
       start_period: 30s
-
     deploy:
       replicas: 2
       endpoint_mode: vip
-
       update_config:
         parallelism: 1
         delay: 5s
@@ -156,11 +200,9 @@ services:
         failure_action: rollback
         monitor: 60s
         max_failure_ratio: 0
-
       rollback_config:
         parallelism: 1
         order: start-first
-
       restart_policy:
         condition: any
         delay: 5s
@@ -176,3 +218,6 @@ configs:
 volumes:
   rabbitmq_data:
   vault_data:
+  rabbitmq_config:
+  keycloak_config:
+  keycloak_data:
