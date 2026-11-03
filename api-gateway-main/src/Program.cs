@@ -4,8 +4,38 @@ using Bizcord.ApiGateway.Extensions;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using VaultSharp;
+using VaultSharp.V1.AuthMethods.AppRole;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load the gateway JWT signing key from Vault.
+var vaultAddress = Environment.GetEnvironmentVariable("VAULT_ADDR")
+    ?? throw new InvalidOperationException("VAULT_ADDR is missing.");
+
+var roleId = Environment.GetEnvironmentVariable("VAULT_ROLE_ID")
+    ?? throw new InvalidOperationException("VAULT_ROLE_ID is missing.");
+
+var secretId = Environment.GetEnvironmentVariable("VAULT_SECRET_ID")
+    ?? throw new InvalidOperationException("VAULT_SECRET_ID is missing.");
+
+var vault = new VaultClient(new VaultClientSettings(
+    vaultAddress,
+    new AppRoleAuthMethodInfo(roleId, secretId)));
+
+var secret = await vault.V1.Secrets.KeyValue.V2.ReadSecretAsync(
+    path: "gateway",
+    mountPoint: "secret");
+
+var signingKey = secret.Data.Data
+    .TryGetValue("AuthenticationProviderKey", out var value)
+    ? value?.ToString()
+    : null;
+
+if (string.IsNullOrWhiteSpace(signingKey))
+    throw new InvalidOperationException("Gateway signing key is missing.");
+
+builder.Configuration["AuthenticationProviderKey"] = signingKey;
 
 // Ocelot merges these source files into a generated ocelot.json at startup.
 builder.Configuration.AddOcelot("Configuration", builder.Environment);
