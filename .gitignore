@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 !/packages/Shared.Contracts/**
 
 packages/Shared.Contracts/obj/
+
+# Vault storage is committed as a single snapshot archive
+/vault/seed/

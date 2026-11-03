@@ -2,15 +2,18 @@ services:
   vault-seed:
     image: alpine:3.20
     restart: "no"
+
     volumes:
-      - ./vault/seed:/seed:ro
+      - ./vault/seed.tar.gz:/seed.tar.gz:ro
       - vault_data:/vault/file
+
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        test -n "$$(ls -A /seed)"
+        test -s /seed.tar.gz
+
         if [ -z "$$(ls -A /vault/file)" ]; then
-          cp -a /seed/. /vault/file/
+          tar -xzf /seed.tar.gz -C /vault/file
         fi
 
   vault:
