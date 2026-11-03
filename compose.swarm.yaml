@@ -1,0 +1,142 @@
+
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq
+
+    environment:
+      RABBITMQ_DEFAULT_USER: bizcord
+      RABBITMQ_DEFAULT_PASS: bizcord
+      RABBITMQ_NODENAME: rabbit@rabbitmq
+
+    ports:
+      - target: 5672
+        published: 5672
+        protocol: tcp
+        mode: ingress
+      - target: 15672
+        published: 15672
+        protocol: tcp
+        mode: ingress
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    deploy:
+      replicas: 1
+
+      placement:
+        constraints:
+          - node.role == manager
+
+      restart_policy:
+        condition: any
+        delay: 5s
+
+  realtime-communication:
+    image: bizcord-realtime:${REALTIME_VERSION:-1.0.0}
+
+    build:
+      context: .
+      dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__RabbitMq: "host=rabbitmq;username=bizcord;password=bizcord"
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+    deploy:
+      replicas: 2
+      endpoint_mode: vip
+
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0
+
+      rollback_config:
+        parallelism: 1
+        order: start-first
+
+      restart_policy:
+        condition: any
+        delay: 5s
+
+  api-gateway:
+    image: bizcord-gateway:${GATEWAY_VERSION:-1.0.0}
+
+    build:
+      context: ./api-gateway-main
+      dockerfile: Dockerfile
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+    ports:
+      - target: 8080
+        published: 9081
+        protocol: tcp
+        mode: ingress
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+    deploy:
+      replicas: 2
+      endpoint_mode: vip
+
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0
+
+      rollback_config:
+        parallelism: 1
+        order: start-first
+
+      restart_policy:
+        condition: any
+        delay: 5s
+
+networks:
+  backend:
+    driver: overlay
+
+volumes:
+  rabbitmq_data:

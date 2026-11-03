@@ -1,5 +1,10 @@
 {
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:8080"
+    "BaseUrl": "http://localhost:8080",
+    "QoSOptions": {
+      "MinimumThroughput": 3,
+      "BreakDuration": 10000,
+      "Timeout": 3000
+    }
   }
 }
