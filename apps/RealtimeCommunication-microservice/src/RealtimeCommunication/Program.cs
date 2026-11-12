@@ -11,6 +11,7 @@ using StackExchange.Redis;
 using System.Text;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods.AppRole;
+using RealtimeCommunication.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,7 @@ builder.Services.AddMessageHandlers(
     typeof(MessagePostedHandler).Assembly);
 
 builder.Services.AddScoped<IRealtimeSessionService, RealtimeSessionService>();
+builder.Services.AddSingleton<IUserBanSagaRepository, InMemoryUserBanSagaRepository>();
 
 builder.Services.AddSingleton<LiveKitTokenService>();
 
