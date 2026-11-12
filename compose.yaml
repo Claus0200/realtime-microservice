@@ -131,6 +131,10 @@ services:
       LiveKit__ApiSecret: change-this-development-secret-123456789
       LiveKit__PublicUrl: ws://localhost:7880
       LiveKit__InternalUrl: http://livekit:7880
+      Redis__Connection: voice-redis:6379
+      Voice__JwtSigningKey: ${VOICE_JWT_SIGNING_KEY:?required}
+      Voice__AllowInsecureDevEndpoint: "false"
+      Voice__AllowSagaTestCommands: "true"
     ports:
       - "127.0.0.1:9080:8080"
     networks:
@@ -139,6 +143,8 @@ services:
       rabbitmq:
         condition: service_healthy
       vault:
+        condition: service_healthy
+      voice-redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
@@ -206,6 +212,19 @@ services:
       - backend
     restart: unless-stopped
 
+  voice-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - voice_redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 networks:
   backend:
     driver: bridge
@@ -215,3 +234,4 @@ volumes:
   vault_data:
   rabbitmq_config:
   keycloak_config:
+  voice_redis_data:

@@ -154,6 +154,23 @@
       "RouteClaimsRequirement": {
         "role": "internal-service"
       }
+    },
+    {
+      "Key": "voice-join",
+      "UpstreamPathTemplate": "/api/voice/{channelId}/join",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/voice/{channelId}/join",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": ["Bearer"],
+        "AllowedScopes": []
+      }
     }
   ]
 }
