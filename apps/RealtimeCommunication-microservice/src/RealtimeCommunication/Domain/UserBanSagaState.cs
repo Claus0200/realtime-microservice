@@ -1,3 +1,4 @@
+namespace RealtimeCommunication.Domain;
 
 public class UserBanSagaState
 {

@@ -1,3 +1,5 @@
+using RealtimeCommunication.Domain;
+
 namespace RealtimeCommunication.Repositories;
 
 public class InMemoryUserBanSagaRepository : IUserBanSagaRepository

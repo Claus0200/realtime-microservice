@@ -1,3 +1,5 @@
+using RealtimeCommunication.Domain;
+
 namespace RealtimeCommunication.Repositories;
 
 public interface IUserBanSagaRepository
