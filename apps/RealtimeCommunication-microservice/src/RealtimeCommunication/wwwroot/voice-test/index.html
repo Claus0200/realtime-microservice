@@ -340,8 +340,20 @@
                     }
                 );
 
-                if (!response.ok)
-                    throw new Error(await response.text());
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        throw new Error("You are banned from voice chat.");
+                    }
+
+                    if (response.status === 401) {
+                        throw new Error("Your JWT is invalid or expired.");
+                    }
+
+                    throw new Error(
+                        (await response.text()) ||
+                        `Request failed with HTTP ${response.status}`
+                    );
+                }
 
                 const connection = await response.json();
 
