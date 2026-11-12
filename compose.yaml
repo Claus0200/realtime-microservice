@@ -127,6 +127,10 @@ services:
       VAULT_ROLE_ID: ${VAULT_ROLE_ID:?required}
       VAULT_SECRET_ID: ${VAULT_SECRET_ID:?required}
       Keycloak__Authority: http://keycloak:8080/realms/bizcord
+      LiveKit__ApiKey: devkey
+      LiveKit__ApiSecret: change-this-development-secret-123456789
+      LiveKit__PublicUrl: ws://localhost:7880
+      LiveKit__InternalUrl: http://livekit:7880
     ports:
       - "127.0.0.1:9080:8080"
     networks:
@@ -188,6 +192,19 @@ services:
       timeout: 3s
       retries: 3
       start_period: 30s
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "127.0.0.1:7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    networks:
+      - backend
+    restart: unless-stopped
 
 networks:
   backend:
