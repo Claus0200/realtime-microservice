@@ -57,15 +57,9 @@ public class UserBanSagaOrchestrator :
 
         state.UserBanned = true;
         await _sagaRepo.Save(state);
-
-        await _messageClient.PublishAsync(new RemoveUserFromChannels
-        {
-            SagaId = message.SagaId,
-            UserId = message.UserId
-        });
     }
 
-    // User ban
+    // User ban failed
     public async Task HandleAsync(
         UserBanFailedEvent message,
         CancellationToken ct)
