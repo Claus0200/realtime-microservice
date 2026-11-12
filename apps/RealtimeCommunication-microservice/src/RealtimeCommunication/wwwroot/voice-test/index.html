@@ -1,0 +1,411 @@
+﻿
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bizcord Voice Test</title>
+
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #202127;
+            color: #f4f4f5;
+            padding: 24px;
+            max-width: 650px;
+            margin: auto;
+        }
+
+        input, button {
+            font: inherit;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        input {
+            background: #30323a;
+            color: white;
+            border: 1px solid #555;
+            box-sizing: border-box;
+            width: 100%;
+            margin: 6px 0 14px;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+            background: #5865f2;
+            color: white;
+            margin: 4px;
+        }
+
+            button:disabled {
+                opacity: .45;
+                cursor: not-allowed;
+            }
+
+        #mute.muted {
+            background: #b23b45;
+        }
+
+        #leave {
+            background: #a32d35;
+        }
+
+        .panel {
+            background: #2b2d35;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 18px;
+        }
+
+        .participant {
+            background: #383a43;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+            .participant.speaking {
+                border-color: #30c878;
+            }
+
+        .details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .secondary {
+            color: #adb0bd;
+            font-size: 13px;
+        }
+
+        .mic-muted {
+            color: #ff7c83;
+        }
+
+        .mic-active {
+            color: #7de9ac;
+        }
+
+        .speaking-label {
+            color: #30c878;
+        }
+
+        .status {
+            color: #adb0bd;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Bizcord Voice Test</h2>
+
+    <label for="channel">Channel ID</label>
+    <input id="channel"
+           value="11111111-1111-4111-8111-111111111111">
+
+    <label for="user">User ID</label>
+    <input id="user">
+
+    <div>
+        <button id="join">Join voice</button>
+        <button id="mute" disabled>Mute</button>
+        <button id="leave" disabled>Leave</button>
+    </div>
+
+    <div class="panel">
+        <strong>Connection</strong>
+        <div id="status" class="status">Disconnected</div>
+        <div id="quality" class="secondary"></div>
+    </div>
+
+    <div class="panel">
+        <strong id="count">Participants: 0</strong>
+        <div id="participants"></div>
+    </div>
+
+    <div id="audio" hidden></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.23.0/dist/livekit-client.umd.min.js"></script>
+
+    <script>
+        const {
+            Room,
+            RoomEvent,
+            Track,
+            AudioPresets
+        } = LivekitClient;
+
+        const channelInput = document.getElementById("channel");
+        const userInput = document.getElementById("user");
+
+        const joinButton = document.getElementById("join");
+        const muteButton = document.getElementById("mute");
+        const leaveButton = document.getElementById("leave");
+
+        const statusElement = document.getElementById("status");
+        const qualityElement = document.getElementById("quality");
+        const countElement = document.getElementById("count");
+        const participantsElement = document.getElementById("participants");
+        const audioElement = document.getElementById("audio");
+
+        userInput.value = crypto.randomUUID();
+
+        let room = null;
+
+        function setStatus(text) {
+            statusElement.textContent = text;
+        }
+
+        function updateButtons() {
+            const connected = room?.state === "connected";
+
+            joinButton.disabled = !!room;
+            leaveButton.disabled = !connected;
+            muteButton.disabled = !connected;
+
+            if (!connected) {
+                muteButton.textContent = "Mute";
+                muteButton.classList.remove("muted");
+                return;
+            }
+
+            const muted = !room.localParticipant.isMicrophoneEnabled;
+
+            muteButton.textContent = muted ? "Unmute" : "Mute";
+            muteButton.classList.toggle("muted", muted);
+        }
+
+        function renderParticipants() {
+            participantsElement.replaceChildren();
+
+            if (!room || room.state !== "connected") {
+                countElement.textContent = "Participants: 0";
+                return;
+            }
+
+            const people = [
+                room.localParticipant,
+                ...room.remoteParticipants.values()
+            ];
+
+            countElement.textContent = `Participants: ${people.length}`;
+
+            for (const person of people) {
+                const item = document.createElement("div");
+                item.className = "participant";
+
+                if (person.isSpeaking)
+                    item.classList.add("speaking");
+
+                const details = document.createElement("div");
+                details.className = "details";
+
+                const name = document.createElement("strong");
+                const shortId = person.identity.slice(0, 8);
+
+                name.textContent = person.isLocal
+                    ? `You (${shortId})`
+                    : `User ${shortId}`;
+
+                const state = document.createElement("span");
+                state.className = "secondary";
+
+                state.textContent = person.isSpeaking
+                    ? "Speaking"
+                    : person.connectionQuality || "Connected";
+
+                if (person.isSpeaking)
+                    state.classList.add("speaking-label");
+
+                const mic = document.createElement("span");
+
+                if (person.isMicrophoneEnabled) {
+                    mic.textContent = "Mic on";
+                    mic.className = "mic-active";
+                } else {
+                    mic.textContent = "Muted";
+                    mic.className = "mic-muted";
+                }
+
+                details.append(name, state);
+                item.append(details, mic);
+                participantsElement.appendChild(item);
+            }
+
+            qualityElement.textContent =
+                `Your connection: ${room.localParticipant.connectionQuality}`;
+
+            updateButtons();
+        }
+
+        function registerEvents(currentRoom) {
+            currentRoom.on(RoomEvent.ParticipantConnected,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.ParticipantDisconnected,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.ActiveSpeakersChanged,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.ConnectionQualityChanged,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.TrackMuted,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.TrackUnmuted,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.TrackPublished,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.TrackUnpublished,
+                renderParticipants);
+
+            currentRoom.on(RoomEvent.Reconnecting, () => {
+                setStatus("Reconnecting...");
+                updateButtons();
+            });
+
+            currentRoom.on(RoomEvent.Reconnected, () => {
+                setStatus("Connected");
+                renderParticipants();
+            });
+
+            currentRoom.on(RoomEvent.AudioPlaybackStatusChanged,
+                (playing) => {
+                    if (!playing)
+                        setStatus("Audio playback blocked by browser");
+                });
+
+            currentRoom.on(RoomEvent.TrackSubscribed,
+                (track) => {
+                    if (track.kind === Track.Kind.Audio) {
+                        const element = track.attach();
+                        element.autoplay = true;
+                        audioElement.appendChild(element);
+                    }
+
+                    renderParticipants();
+                });
+
+            currentRoom.on(RoomEvent.TrackUnsubscribed,
+                (track) => {
+                    track.detach().forEach(element => element.remove());
+                    renderParticipants();
+                });
+
+            currentRoom.on(RoomEvent.Disconnected, () => {
+                if (room !== currentRoom) return;
+
+                room = null;
+                audioElement.replaceChildren();
+                setStatus("Disconnected");
+                qualityElement.textContent = "";
+                renderParticipants();
+                updateButtons();
+            });
+        }
+
+        joinButton.onclick = async () => {
+            if (room) return;
+
+            try {
+                setStatus("Connecting...");
+                joinButton.disabled = true;
+
+                const response = await fetch(
+                    `/api/voice/${channelInput.value}/dev-token` +
+                    `?userId=${userInput.value}`
+                );
+
+                if (!response.ok)
+                    throw new Error(await response.text());
+
+                const connection = await response.json();
+
+                room = new Room({
+                    audioCaptureDefaults: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false,
+                        channelCount: 1
+                    },
+
+                    publishDefaults: {
+                        audioPreset: AudioPresets.musicHighQuality,
+                        dtx: false,
+                        red: true,
+                        stopMicTrackOnMute: false
+                    }
+                });
+
+                const currentRoom = room;
+                registerEvents(currentRoom);
+
+                await currentRoom.connect(
+                    connection.serverUrl,
+                    connection.token
+                );
+
+                await currentRoom.startAudio();
+
+                await currentRoom.localParticipant
+                    .setMicrophoneEnabled(true);
+
+                setStatus("Connected");
+                renderParticipants();
+            } catch (error) {
+                setStatus(`Error: ${error.message}`);
+
+                if (room) {
+                    const failedRoom = room;
+                    room = null;
+                    await failedRoom.disconnect();
+                }
+
+                renderParticipants();
+                updateButtons();
+            }
+        };
+
+        muteButton.onclick = async () => {
+            if (!room || room.state !== "connected") return;
+
+            muteButton.disabled = true;
+
+            try {
+                const enabled =
+                    room.localParticipant.isMicrophoneEnabled;
+
+                await room.localParticipant
+                    .setMicrophoneEnabled(!enabled);
+
+                renderParticipants();
+            } catch (error) {
+                setStatus(`Mute failed: ${error.message}`);
+            } finally {
+                updateButtons();
+            }
+        };
+
+        leaveButton.onclick = async () => {
+            if (!room) return;
+
+            leaveButton.disabled = true;
+
+            await room.disconnect();
+        };
+    </script>
+</body>
+</html>

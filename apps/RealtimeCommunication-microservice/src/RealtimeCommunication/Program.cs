@@ -55,6 +55,8 @@ builder.Services.AddMessageHandlers(
 
 builder.Services.AddScoped<IRealtimeSessionService, RealtimeSessionService>();
 
+builder.Services.AddSingleton<LiveKitTokenService>();
+
 var app = builder.Build();
 
 // Swagger
@@ -62,6 +64,9 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseAuthorization();
+
+// Serve static files for the WebRTC client.
+app.UseStaticFiles();
 
 app.MapControllers();
 
