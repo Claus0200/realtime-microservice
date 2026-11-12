@@ -1,10 +1,11 @@
+using System.Collections.Concurrent;
 using RealtimeCommunication.Domain;
 
 namespace RealtimeCommunication.Repositories;
 
 public class InMemoryUserBanSagaRepository : IUserBanSagaRepository
 {
-    private readonly Dictionary<Guid, UserBanSagaState> _states = new();
+    private readonly ConcurrentDictionary<Guid, UserBanSagaState> _states = new();
 
     public Task<UserBanSagaState?> GetById(Guid sagaId)
     {

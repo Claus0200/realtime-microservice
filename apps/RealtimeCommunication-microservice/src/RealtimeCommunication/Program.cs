@@ -62,6 +62,8 @@ builder.Services.AddMessageHandlers(
 builder.Services.AddScoped<IRealtimeSessionService, RealtimeSessionService>();
 builder.Services.AddSingleton<IUserBanSagaRepository, InMemoryUserBanSagaRepository>();
 
+builder.Services.AddSingleton<UserBanSagaLocks>();
+
 builder.Services.AddSingleton<LiveKitTokenService>();
 
 builder.Services.AddSingleton(new RoomServiceClient(
