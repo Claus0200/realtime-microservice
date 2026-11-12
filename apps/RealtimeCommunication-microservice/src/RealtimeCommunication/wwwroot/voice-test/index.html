@@ -324,9 +324,20 @@
                 setStatus("Connecting...");
                 joinButton.disabled = true;
 
+                const jwt = prompt("Enter your Bizcord JWT");
+
+                if (!jwt) {
+                    throw new Error("JWT required");
+                }
+
                 const response = await fetch(
-                    `/api/voice/${channelInput.value}/dev-token` +
-                    `?userId=${userInput.value}`
+                    `/api/voice/${channelInput.value}/join`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${jwt}`
+                        }
+                    }
                 );
 
                 if (!response.ok)

@@ -1,9 +1,14 @@
 
+using EasyNetQ;
+using EasyNetQ.Persistent;
+using Livekit.Server.Sdk.Dotnet;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using RealtimeCommunication.Messaging;
 using RealtimeCommunication.Messaging.Handlers;
 using RealtimeCommunication.Services;
-using EasyNetQ;
-using EasyNetQ.Persistent;
+using StackExchange.Redis;
+using System.Text;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods.AppRole;
 
@@ -57,12 +62,60 @@ builder.Services.AddScoped<IRealtimeSessionService, RealtimeSessionService>();
 
 builder.Services.AddSingleton<LiveKitTokenService>();
 
+builder.Services.AddSingleton(new RoomServiceClient(
+    builder.Configuration["LiveKit:InternalUrl"]
+        ?? throw new InvalidOperationException("LiveKit URL missing"),
+
+    builder.Configuration["LiveKit:ApiKey"]
+        ?? throw new InvalidOperationException("LiveKit API key missing"),
+
+    builder.Configuration["LiveKit:ApiSecret"]
+        ?? throw new InvalidOperationException("LiveKit secret missing")
+));
+
+builder.Services.AddSingleton<IVoiceMediaAdmin, LiveKitVoiceMediaAdmin>();
+
+// Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(
+        builder.Configuration["Redis:Connection"]
+            ?? throw new InvalidOperationException(
+                "Redis connection missing")));
+
+builder.Services.AddSingleton<IVoiceAccessStore, RedisVoiceAccessStore>();
+
+// JWT authentication for voice service.
+var jwtSigningKey = builder.Configuration["Voice:JwtSigningKey"]
+    ?? throw new InvalidOperationException(
+        "JWT signing key is missing");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSigningKey)),
+            ValidateLifetime = true,
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Serve static files for the WebRTC client.

@@ -1,19 +1,31 @@
-﻿using Livekit.Server.Sdk.Dotnet;
+﻿
+using Livekit.Server.Sdk.Dotnet;
 
 namespace RealtimeCommunication.Services;
 
-public sealed class LiveKitTokenService(IConfiguration config)
+public sealed class LiveKitTokenService(
+    IConfiguration config,
+    IVoiceAccessStore access)
 {
-    public string Create(Guid channelId, Guid userId)
+    public async Task<string> CreateAsync(
+        Guid channelId,
+        Guid userId)
     {
+        if (await access.IsBlockedAsync(userId))
+            throw new UnauthorizedAccessException(
+                "User is blocked from voice chat");
+
         if (config.GetValue<bool>("Voice:SimulateTokenFailure"))
-            throw new InvalidOperationException("Simulated token failure");
+            throw new InvalidOperationException(
+                "Simulated token failure");
 
         var key = config["LiveKit:ApiKey"]
-            ?? throw new InvalidOperationException("LiveKit key missing");
+            ?? throw new InvalidOperationException(
+                "LiveKit key missing");
 
         var secret = config["LiveKit:ApiSecret"]
-            ?? throw new InvalidOperationException("LiveKit secret missing");
+            ?? throw new InvalidOperationException(
+                "LiveKit secret missing");
 
         return new AccessToken(key, secret)
             .WithIdentity(userId.ToString())
