@@ -120,6 +120,11 @@ services:
       context: .
       dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
@@ -146,6 +151,8 @@ services:
         condition: service_healthy
       voice-redis:
         condition: service_healthy
+      fluentd:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
       interval: 10s
@@ -224,6 +231,22 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  fluentd:
+    image: fluent/fluentd:latest
+    container_name: fluentd
+    restart: unless-stopped
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
+      - /var/lib/docker/containers:/fluentd/log/containers:ro
+    environment:
+      FLUENTD_CONF: fluent.conf
+
+    networks:
+      - backend
 
 networks:
   backend:

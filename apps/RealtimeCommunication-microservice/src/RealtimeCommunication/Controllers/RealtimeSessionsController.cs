@@ -9,17 +9,25 @@ namespace RealtimeCommunication.Controllers;
 public sealed class RealtimeSessionsController : ControllerBase
 {
     private readonly IRealtimeSessionService _service;
+    private ILogger<RealtimeSessionsController> _logger;
 
-    public RealtimeSessionsController(IRealtimeSessionService service)
+    public RealtimeSessionsController(IRealtimeSessionService service, ILogger<RealtimeSessionsController> logger)
     {
         _service = service;
+        _logger = logger;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Retrieving all realtime sessions.");
+
         var sessions = await _service.GetAllAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Successfully retrieved {SessionCount} realtime sessions.",
+            sessions.Count());
 
         return Ok(sessions);
     }
@@ -29,13 +37,28 @@ public sealed class RealtimeSessionsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Retrieving realtime session {SessionId}.",
+            id);
+
         var session = await _service.GetByIdAsync(
             id,
             cancellationToken);
 
-        return session is null
-            ? NotFound()
-            : Ok(session);
+        if (session is null)
+        {
+            _logger.LogWarning(
+                "Realtime session {SessionId} was not found.",
+                id);
+
+            return NotFound();
+        }
+
+        _logger.LogInformation(
+            "Successfully retrieved realtime session {SessionId}.",
+            id);
+
+        return Ok(session);
     }
 
     [HttpPost]
@@ -43,9 +66,15 @@ public sealed class RealtimeSessionsController : ControllerBase
         [FromBody] CreateRealtimeSessionRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Creating a new realtime session.");
+
         var session = await _service.CreateAsync(
             request,
             cancellationToken);
+
+        _logger.LogInformation(
+            "Successfully created realtime session {SessionId}.",
+            session.Id);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -59,6 +88,10 @@ public sealed class RealtimeSessionsController : ControllerBase
         [FromBody] UpdateRealtimeSessionRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Updating realtime session {SessionId}.",
+            id);
+
         try
         {
             var session = await _service.UpdateAsync(
@@ -66,12 +99,28 @@ public sealed class RealtimeSessionsController : ControllerBase
                 request,
                 cancellationToken);
 
-            return session is null
-                ? NotFound()
-                : Ok(session);
+            if (session is null)
+            {
+                _logger.LogWarning(
+                    "Cannot update realtime session {SessionId}: session was not found.",
+                    id);
+
+                return NotFound();
+            }
+
+            _logger.LogInformation(
+                "Successfully updated realtime session {SessionId}.",
+                id);
+
+            return Ok(session);
         }
         catch (InvalidOperationException exception)
         {
+            _logger.LogWarning(
+                exception,
+                "Conflict while updating realtime session {SessionId}.",
+                id);
+
             return Conflict(new
             {
                 error = exception.Message
@@ -84,12 +133,27 @@ public sealed class RealtimeSessionsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Deleting realtime session {SessionId}.",
+            id);
+
         var deleted = await _service.DeleteAsync(
             id,
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        if (!deleted)
+        {
+            _logger.LogWarning(
+                "Cannot delete realtime session {SessionId}: session was not found.",
+                id);
+
+            return NotFound();
+        }
+
+        _logger.LogInformation(
+            "Successfully deleted realtime session {SessionId}.",
+            id);
+
+        return NoContent();
     }
 }
