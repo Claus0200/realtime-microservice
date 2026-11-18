@@ -489,3 +489,4 @@ packages/Shared.Contracts/obj/
 
 # Vault storage is committed as a single snapshot archive
 /vault/seed/
+!/vault/seed.tar.gz
