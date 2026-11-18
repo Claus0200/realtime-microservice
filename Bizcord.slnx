@@ -4,8 +4,18 @@
   </Folder>
 
   <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+    <File Path=".env.example" />
+    <File Path=".gitignore" />
     <File Path="compose.yaml" />
+    <File Path="compose.swarm.yaml" />
+    <File Path="vault/config.hcl" />
+    <File Path="livekit/livekit.yaml" />
+    <File Path="api-gateway-main/src/Configuration/ocelot.global.json" />
+    <File Path="api-gateway-main/src/Configuration/ocelot.realtimecommunication.json" />
+    <File Path="docs/SagaWorkflow.md" />
   </Folder>
+
   <Folder Name="/api-gateway-main/" />
   <Folder Name="/api-gateway-main/src/">
     <Project Path="api-gateway-main/src/api-gateway.csproj" />
