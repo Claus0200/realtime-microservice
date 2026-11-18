@@ -158,7 +158,7 @@
     {
       "Key": "voice-join",
       "UpstreamPathTemplate": "/api/voice/{channelId}/join",
-      "UpstreamHttpMethod": ["POST"],
+      "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/api/voice/{channelId}/join",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -168,8 +168,25 @@
         }
       ],
       "AuthenticationOptions": {
-        "AuthenticationProviderKeys": ["Bearer"],
+        "AuthenticationProviderKeys": [ "Bearer" ],
         "AllowedScopes": []
+      }
+    },
+    {
+      "Key": "realtime-graphql",
+      "UpstreamPathTemplate": "/graphql",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/graphql",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "realtime-communication",
+          "Port": 8080
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [ "Bearer" ],
+        "AllowedScopes": [ "channel.read" ]
       }
     }
   ]
