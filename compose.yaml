@@ -121,10 +121,11 @@ services:
       dockerfile: apps/RealtimeCommunication-microservice/Dockerfile
     restart: unless-stopped
     logging:
-      driver: "json-file"
+      driver: "fluentd"
       options:
-        max-size: "10m"
-        max-file: "3"
+        fluentd-address: "localhost:24224"
+        fluentd-async: "true"
+        tag: "bizcord.realtime"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
@@ -238,13 +239,10 @@ services:
     restart: unless-stopped
     ports:
       - "24224:24224"
-      - "24224:24224/udp"
     volumes:
-      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
-      - /var/lib/docker/containers:/fluentd/log/containers:ro
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
     environment:
       FLUENTD_CONF: fluent.conf
-
     networks:
       - backend
 
