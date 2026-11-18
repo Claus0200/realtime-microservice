@@ -1,4 +1,3 @@
-
 using EasyNetQ;
 using EasyNetQ.Persistent;
 using Livekit.Server.Sdk.Dotnet;
@@ -12,6 +11,7 @@ using System.Text;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods.AppRole;
 using RealtimeCommunication.Repositories;
+using RealtimeCommunication.GraphQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +88,12 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 
 builder.Services.AddSingleton<IVoiceAccessStore, RedisVoiceAccessStore>();
 
+//GraphQL
+builder.Services.AddHttpContextAccessor();
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<RealtimeQuery>();
+
 // JWT authentication for voice service.
 var jwtSigningKey = builder.Configuration["Voice:JwtSigningKey"]
     ?? throw new InvalidOperationException(
@@ -121,6 +127,9 @@ app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGraphQL("/graphql")
+   .RequireAuthorization();
 
 // Serve static files for the WebRTC client.
 app.UseStaticFiles();
