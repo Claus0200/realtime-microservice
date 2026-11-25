@@ -131,6 +131,9 @@ app.UseAuthorization();
 app.MapGraphQL("/graphql")
    .RequireAuthorization();
 
+// GraphQL IDE for development
+app.MapNitroApp("/graphql/ui");
+
 // Serve static files for the WebRTC client.
 app.UseStaticFiles();
 
